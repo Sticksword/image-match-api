@@ -20,4 +20,4 @@ files = {'IMG_0670.jpg': ('IMG_0670.jpg', data, 'application/octet-stream')}
 
 response = requests.post(url, headers=headers, files=files)
 
-print(response.text)
+print response.text
