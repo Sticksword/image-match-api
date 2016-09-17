@@ -11,13 +11,13 @@ url = "https://api.projectoxford.ai/face/v1.0/detect"
 
 headers = {
   'ocp-apim-subscription-key': "46f043d347ce47a8a66b3d734ac18128",
-  'content-type': "application/octet-stream",
+  'Content-Type': "application/octet-stream",
   'cache-control': "no-cache",
 }
 
-data = open('IMG_0670.jpg', 'rb')
-files = {'IMG_0670.jpg': ('IMG_0670.jpg', data, 'application/octet-stream')}
+data = open('IMG_0670.jpg', 'rb').read()
+# files = {'IMG_0670.jpg': data.read()}
 
-response = requests.post(url, headers=headers, files=files)
+response = requests.post(url, headers=headers, data=data)
 
-print response.text
+print(response.text)
