@@ -16,7 +16,6 @@ headers = {
 }
 
 data = open('IMG_0670.jpg', 'rb').read()
-# files = {'IMG_0670.jpg': data.read()}
 
 response = requests.post(url, headers=headers, data=data)
 

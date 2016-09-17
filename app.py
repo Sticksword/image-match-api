@@ -2,6 +2,8 @@ from flask import Flask, jsonify, abort, make_response, request
 
 app = Flask(__name__)
 
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+
 tasks = [
   {
     'id': 1,
@@ -17,12 +19,12 @@ tasks = [
   }
 ]
 
-@app.route('/todo/api/v1.0/tasks', methods=['GET'])
+@app.route('/todo/tasks', methods=['GET'])
 def get_tasks():
   return jsonify({'tasks': tasks})
 
 
-@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['GET'])
+@app.route('/todo/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
   task = [task for task in tasks if task['id'] == task_id]
   if len(task) == 0:
@@ -30,7 +32,7 @@ def get_task(task_id):
   return jsonify({'task': task[0]})
 
 
-@app.route('/todo/api/v1.0/tasks', methods=['POST'])
+@app.route('/todo/tasks', methods=['POST'])
 def create_task():
   if not request.json or not 'title' in request.json:
     abort(400)
@@ -44,7 +46,7 @@ def create_task():
   return jsonify({'task': task}), 201
 
 
-@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['PUT'])
+@app.route('/todo/tasks/<int:task_id>', methods=['PUT'])
 def update_task(task_id):
   task = [task for task in tasks if task['id'] == task_id]
   if len(task) == 0:
@@ -63,7 +65,7 @@ def update_task(task_id):
   return jsonify({'task': task[0]})
 
 
-@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['DELETE'])
+@app.route('/todo/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
   task = [task for task in tasks if task['id'] == task_id]
   if len(task) == 0:
@@ -72,19 +74,23 @@ def delete_task(task_id):
   return jsonify({'result': True})
 
 
-import requests
+@app.route('/api/match_image', methods=['POST'])
+def upload_file():
+  if request.method == 'POST':
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+      print '**received file: ', file.filename
+      print file
+      return jsonify({'success': 'good job'})
+    else:
+      return jsonify({'error': 'bad input file type'})
+  else:
+    return jsonify({'error': 'only POST methods allowed'})
 
-url = "https://api.projectoxford.ai/face/v1.0/detect"
 
-headers = {
-  'ocp-apim-subscription-key': "46f043d347ce47a8a66b3d734ac18128",
-  'content-type': "application/octet-stream",
-  'cache-control': "no-cache",
-}
-
-response = requests.request("POST", url, headers=headers)
-
-print(response.text)
+@app.route('/')
+def home():
+  return 'The North Remembers'
 
 
 @app.errorhandler(404)
