@@ -1,2 +1,6 @@
 env
+faces.py
+google-cloud-vision-credential-profile.json
+me.jpg
+out.jpg
 .DS_Store
