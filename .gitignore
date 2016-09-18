@@ -1,7 +1,6 @@
 env
 google-vision-faces-demo.py
 google-cloud-vision-credential-profile.json
-me.jpg
-out.jpg
+*.jpg
 .DS_Store
 *.pyc

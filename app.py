@@ -26,6 +26,13 @@ tasks = [
   }
 ]
 
+user_info = {
+  'd2486143-3717-4bab-a7a2-e188b9b0d747': {'name': 'Frieda', 'occupation': 'Waterloo 2nd Year Undergrad'},
+  '270a82f4-ac3e-49f6-aefa-fbcad5caaefa': {'name': 'Michael', 'occupation': 'Software Engineer'},
+  'bd7d5198-bb7c-4b91-be5f-86bf8218ff7c': {'name': 'David', 'occupation': 'Waterloo 3rd Year Undergrad'},
+  '45e9fa8f-bfac-456c-afee-e9377c2265bd': {'name': 'Jacob', 'occupation': 'Waterloo Physics Grad'}
+}
+
 ##############################################################
 # Routes
 ##############################################################
@@ -97,11 +104,11 @@ def match_image():
     # json.loads(request.get_data())
     # print request.get_json(force=True)
     # print request.json
-    box = (request.json['top'], request.json['left'], request.json['left'] + request.json['width'], request.json['top'] + request.json['height'])
+    box = (request.json['left'], request.json['top'], request.json['left'] + request.json['width'], request.json['top'] + request.json['height'])
 
     head_crop = get_head_crop_from_byte_string(request.json['file'], box) # (left, top, right bot)
     head_crop_file = StringIO()
-    head_crop = head_crop.rotate(-90)
+    # head_crop = head_crop.rotate(-90) # only from web
     # head_crop.show() # display the image
     # head_crop.save('lemme-see.jpg') 
     head_crop.save(head_crop_file, format='JPEG') # save PIL image into image file
@@ -109,17 +116,19 @@ def match_image():
 
     if not detection_result:
       print 'no face detected'
+      print detection_result
       return jsonify({'match': False})
     else:
       # print 'result from face detection:'
-      # print type(result)
+      print detection_result
       # print type(result[0])
       similarity_result = find_similar(detection_result[0]['faceId'], 'hack-the-north-michael')
       if not similarity_result:
         print 'no match found'
-        return jsonify({'match': False})
+        return jsonify({'name': 'Unknown', 'occupation': 'Developer Guru?'})
       else:
-        return jsonify({'match': True})
+
+        return jsonify(similarity_result)
 
   else:
     return jsonify({'error': 'no pls, i only like jason'})
@@ -156,9 +165,12 @@ def get_head_crop_from_byte_string(file_string, box):
   # print byte_string
   # decoded = file_string.decode('utf-8')
   decoded = base64.b64decode(file_string)
-  print decoded
+  # print decoded
   imgFile = StringIO(decoded)
   img = Image.open(imgFile)
+  # img.show()
+  width, height = img.size
+  print width, height
 
   # with open('private_pic.jpg', 'wb') as file_handle
   #   file_handle.write(byte_string.decode('base64'))
@@ -201,8 +213,16 @@ def find_similar(faceId, faceListId):
   }
 
   response = requests.post(url, headers=headers, data=json.dumps(data))
+  json_res = response.json()
+  # print json_res
   print response.text
-  return response.json()
+  if json_res:
+    userId = json_res[0]['persistedFaceId']
+    if userId and userId in user_info:
+
+      return user_info[userId]
+    else:
+      print 'problem fetching user with id: ' + userId
 
 
 
