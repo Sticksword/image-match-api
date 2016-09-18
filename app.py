@@ -2,6 +2,8 @@ from flask import Flask, jsonify, abort, make_response, request
 from PIL import Image
 import requests
 import json
+import base64
+
 # from io import BytesIO
 from cStringIO import StringIO # fk so many, from cStringIO to StringIO to BytesIO
 
@@ -86,33 +88,41 @@ def delete_task(task_id):
 @app.route('/api/match_image', methods=['POST'])
 def match_image():
   print 'hello from match_image'
-
-  # print request.data
   print request.headers
-  # print '===================='
-  # print request.data
-  # print request.files
-  head_crop = get_head_crop_from_byte_string(request.data, (0, 0, 1000, 1000)) # (left, top, right bot)
-  head_crop_file = StringIO()
-  head_crop = head_crop.rotate(-90)
-  # head_crop.show() # display the image
-  # head_crop.save('lemme-see.jpg') 
-  head_crop.save(head_crop_file, format='JPEG') # save PIL image into image file
-  detection_result = detect_face(head_crop_file.getvalue()) # pass image file byte value
 
-  if not detection_result:
-    print 'no face detected'
-    return jsonify({'match': False})
-  else:
-    # print 'result from face detection:'
-    # print type(result)
-    # print type(result[0])
-    similarity_result = find_similar(detection_result[0]['faceId'], 'hack-the-north-michael')
-    if not similarity_result:
-      print 'no match found'
+  if request.headers['Content-Type'] == 'application/json':
+    # with open('temp-byte-string.txt', 'wb') as output:
+    #   output.write(bytearray(request.data))
+    # print type(request.get_data())
+    # json.loads(request.get_data())
+    # print request.get_json(force=True)
+    # print request.json
+    box = (request.json['top'], request.json['left'], request.json['left'] + request.json['width'], request.json['top'] + request.json['height'])
+
+    head_crop = get_head_crop_from_byte_string(request.json['file'], box) # (left, top, right bot)
+    head_crop_file = StringIO()
+    head_crop = head_crop.rotate(-90)
+    # head_crop.show() # display the image
+    # head_crop.save('lemme-see.jpg') 
+    head_crop.save(head_crop_file, format='JPEG') # save PIL image into image file
+    detection_result = detect_face(head_crop_file.getvalue()) # pass image file byte value
+
+    if not detection_result:
+      print 'no face detected'
       return jsonify({'match': False})
     else:
-      return jsonify({'match': True})
+      # print 'result from face detection:'
+      # print type(result)
+      # print type(result[0])
+      similarity_result = find_similar(detection_result[0]['faceId'], 'hack-the-north-michael')
+      if not similarity_result:
+        print 'no match found'
+        return jsonify({'match': False})
+      else:
+        return jsonify({'match': True})
+
+  else:
+    return jsonify({'error': 'no pls, i only like jason'})
 
   # file = request.files['file']
   # if file and allowed_file(file.filename):
@@ -138,9 +148,16 @@ def not_found(error):
 # private methods
 ##############################################################
 
-def get_head_crop_from_byte_string(byte_string, box):
+def get_head_crop_from_byte_string(file_string, box):
   print 'hello from get_head_crop_from_byte_string'
-  imgFile = StringIO(byte_string)
+
+  # print file_string
+  # byte_string = file_string.encode('utf-8')
+  # print byte_string
+  # decoded = file_string.decode('utf-8')
+  decoded = base64.b64decode(file_string)
+  print decoded
+  imgFile = StringIO(decoded)
   img = Image.open(imgFile)
 
   # with open('private_pic.jpg', 'wb') as file_handle
