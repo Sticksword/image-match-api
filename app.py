@@ -76,20 +76,26 @@ def delete_task(task_id):
 
 @app.route('/api/match_image', methods=['POST'])
 def upload_file():
+  print 'hello from match_image'
   if request.method == 'POST':
-    file = request.files['file']
-    if file and allowed_file(file.filename):
-      print '**received file: ', file.filename
-      print file
-      return jsonify({'success': 'good job'})
-    else:
-      return jsonify({'error': 'bad input file type'})
+    # print request.data
+    print request.data
+    print request.files
+    return jsonify({'great': 'success'})
+    # file = request.files['file']
+    # if file and allowed_file(file.filename):
+    #   print '**received file: ', file.filename
+    #   print file
+    #   return jsonify({'success': 'good job'})
+    # else:
+    #   return jsonify({'error': 'bad input file type'})
   else:
     return jsonify({'error': 'only POST methods allowed'})
 
 
 @app.route('/')
 def home():
+  print 'hello from /'
   return 'The North Remembers'
 
 
