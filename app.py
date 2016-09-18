@@ -133,10 +133,10 @@ def match_image():
   #   return jsonify({'error': 'bad input file type'})
 
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def home():
   print 'hello from /'
-  return 'The North Remembers'
+  return 'The North Remembers.. but yeah this is just an API website :p'
 
 
 @app.errorhandler(404)
