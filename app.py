@@ -1,4 +1,9 @@
 from flask import Flask, jsonify, abort, make_response, request
+from PIL import Image
+import requests
+import json
+# from io import BytesIO
+from cStringIO import StringIO # fk so many, from cStringIO to StringIO to BytesIO
 
 app = Flask(__name__)
 
@@ -18,6 +23,10 @@ tasks = [
     'done': False
   }
 ]
+
+##############################################################
+# Routes
+##############################################################
 
 @app.route('/todo/tasks', methods=['GET'])
 def get_tasks():
@@ -75,22 +84,43 @@ def delete_task(task_id):
 
 
 @app.route('/api/match_image', methods=['POST'])
-def upload_file():
+def match_image():
   print 'hello from match_image'
-  if request.method == 'POST':
-    # print request.data
-    print request.data
-    print request.files
-    return jsonify({'great': 'success'})
-    # file = request.files['file']
-    # if file and allowed_file(file.filename):
-    #   print '**received file: ', file.filename
-    #   print file
-    #   return jsonify({'success': 'good job'})
-    # else:
-    #   return jsonify({'error': 'bad input file type'})
+
+  # print request.data
+  print request.headers
+  # print '===================='
+  # print request.data
+  # print request.files
+  head_crop = get_head_crop_from_byte_string(request.data, (0, 0, 1000, 1000)) # (left, top, right bot)
+  head_crop_file = StringIO()
+  head_crop = head_crop.rotate(-90)
+  # head_crop.show() # display the image
+  # head_crop.save('lemme-see.jpg') 
+  head_crop.save(head_crop_file, format='JPEG') # save PIL image into image file
+  detection_result = detect_face(head_crop_file.getvalue()) # pass image file byte value
+
+  if not detection_result:
+    print 'no face detected'
+    return jsonify({'match': False})
   else:
-    return jsonify({'error': 'only POST methods allowed'})
+    # print 'result from face detection:'
+    # print type(result)
+    # print type(result[0])
+    similarity_result = find_similar(detection_result[0]['faceId'], 'hack-the-north-michael')
+    if not similarity_result:
+      print 'no match found'
+      return jsonify({'match': False})
+    else:
+      return jsonify({'match': True})
+
+  # file = request.files['file']
+  # if file and allowed_file(file.filename):
+  #   print '**received file: ', file.filename
+  #   print file
+  #   return jsonify({'success': 'good job'})
+  # else:
+  #   return jsonify({'error': 'bad input file type'})
 
 
 @app.route('/')
@@ -102,6 +132,63 @@ def home():
 @app.errorhandler(404)
 def not_found(error):
   return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+##############################################################
+# private methods
+##############################################################
+
+def get_head_crop_from_byte_string(byte_string, box):
+  print 'hello from get_head_crop_from_byte_string'
+  imgFile = StringIO(byte_string)
+  img = Image.open(imgFile)
+
+  # with open('private_pic.jpg', 'wb') as file_handle
+  #   file_handle.write(byte_string.decode('base64'))
+  
+  # img = Image.open('private_pic.jpg')
+
+  # box is a tuple: (left, top, right bot)
+  return img.crop(box)
+
+
+def detect_face(byte_string):
+  print 'hello from detect_face'
+  url = "https://api.projectoxford.ai/face/v1.0/detect"
+
+  headers = {
+    'ocp-apim-subscription-key': "46f043d347ce47a8a66b3d734ac18128",
+    'Content-Type': "application/octet-stream",
+    'cache-control': "no-cache",
+  }
+  # data = open('IMG_0670.jpg', 'rb').read()
+
+  response = requests.post(url, headers=headers, data=byte_string)
+  # print response.text
+  return response.json()
+
+
+def find_similar(faceId, faceListId):
+  print 'hello from find_similar'
+  url = "https://api.projectoxford.ai/face/v1.0/findsimilars"
+
+  headers = {
+    'ocp-apim-subscription-key': "46f043d347ce47a8a66b3d734ac18128",
+    'Content-Type': "application/json",
+    'cache-control': "no-cache",
+  }
+
+  data = {
+    'faceId': faceId,
+    'faceListId': faceListId
+  }
+
+  response = requests.post(url, headers=headers, data=json.dumps(data))
+  print response.text
+  return response.json()
+
+
+
 
 
 if __name__ == '__main__':
